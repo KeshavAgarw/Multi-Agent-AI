@@ -1,28 +1,34 @@
-# AI-Powered Customer Support System (LangGraph)
+# 🤖 Multi-Agent Customer Support Automation System
 
-This project is a multi-agent customer support chatbot built with **LangGraph** (Python).
+![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)
+![LangGraph](https://img.shields.io/badge/LangGraph-0.2.28-orange?style=for-the-badge)
+![Gemini](https://img.shields.io/badge/Gemini-AI-0088CC?style=for-the-badge)
+![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite)
 
-It demonstrates:
-- **Intent classification** → routes queries to the right support “department”
-- **RAG (Retrieval Augmented Generation)** → pulls relevant context from company docs
-- **SQLite conversation memory** → remembers prior messages per `customer_id`
-- **Human-in-the-loop approval** → pauses for sensitive requests (refund/cancel/close/compensation/escalation)
+> An intelligent, autonomous customer support system powered by **LangGraph** and **Google Gemini**, designed to handle complex customer queries through multi-agent orchestration, intent classification, and Retrieval-Augmented Generation (RAG).
 
-## Requirements
-- **Python 3.12**
-- A Gemini API key in `.env` as `GOOGLE_API_KEY=...`
+<div align="center">
+  <img src="./Screenhots%20and%20workflow%20diagram/Workflowdiagram.png" alt="Workflow Diagram" width="800"/>
+</div>
 
-Pinned dependencies are in `requirements.txt`:
-- `langgraph==0.2.28`
-- `langchain==0.3.7`
-- `langchain-google-genai==2.0.4`
-- `langchain-community==0.3.7`
-- `faiss-cpu==1.8.0`
-- `python-dotenv==1.0.1`
+## 🌟 Project Highlights
 
-## Project structure
+- **Multi-Agent Orchestration**: Built a multi-agent customer support automation system using LangGraph, routing customer queries across 4 specialized agents through intent classification and RAG-based retrieval.
+- **Robust Quality Assurance**: Implemented human-in-the-loop approval for high-risk actions and a Supervisor agent to validate agent responses before delivery.
 
-```
+## ✨ Features
+
+- 🧠 **Intent Classification**: Automatically routes incoming queries to the right specialized support "department" (Sales, Tech, Billing, Account).
+- 📚 **RAG (Retrieval-Augmented Generation)**: Equips agents with relevant context pulled directly from company documents using FAISS vector search.
+- 💾 **Stateful Conversations (SQLite)**: Maintains long-term memory per `customer_id`, allowing the system to recall prior interactions seamlessly.
+- ⏸️ **Human-in-the-Loop (HITL)**: Pauses execution for sensitive requests (e.g., refunds, cancellations, escalations) to require manual terminal approval (`approve` / `reject` / `modify`).
+- 👔 **Supervisor Agent**: A final QA step that validates the agent's response for quality and accuracy before presenting it to the user.
+
+---
+
+## 🛠️ Project Structure
+
+```text
 customer_support/
 ├── main.py                  # CLI entry point (runs 5 demo queries)
 ├── graph.py                 # LangGraph workflow definition
@@ -39,112 +45,77 @@ customer_support/
 │   └── retriever.py         # FAISS retriever w/ keyword fallback
 ├── memory/
 │   └── sqlite_memory.py     # SQLite memory store (customer-scoped)
-├── scripts/
-│   ├── memory_smoke_test.py
-│   ├── rag_smoke_test.py
-│   └── classifier_smoke_test.py
 ├── memory.db                # Auto-created at runtime
-├── requirements.txt
-├── .env                     # Your key (NOT committed)
-├── .env.example
-└── .gitignore
+└── ...
 ```
 
-## Setup
+## 🚀 Setup & Installation
 
-### 1) Create a virtual environment (recommended)
+### 1. Prerequisites
+- **Python 3.12+**
+- A Google Gemini API key
 
-PowerShell:
+### 2. Environment Setup
+
+It is highly recommended to use a virtual environment:
 
 ```powershell
+# Create and activate virtual environment
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
-### 2) Install dependencies (pinned)
+### 3. Install Dependencies
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-### 3) Create `.env`
+### 4. Configuration
 
-Copy the example:
+Copy the example environment file and add your API key:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Edit `.env` and set:
+Edit `.env` to include your credentials:
 
-```text
+```env
 GOOGLE_API_KEY=your_gemini_api_key_here
 GEMINI_CHAT_MODEL=models/gemini-2.0-flash
 GEMINI_EMBEDDING_MODEL=models/gemini-embedding-001
 RAG_K=2
 ```
 
-Model names are read from `.env` via `config.py` — change them there if your API key uses different model IDs.
+> **Note**: Model names are read from `.env` via `config.py`. Adjust them if your API key requires different model IDs.
 
-## Run the demo
+## 🎯 Running the Demo
+
+Execute the main script to see the agents in action:
 
 ```powershell
 python main.py
 ```
 
-### What you should see
-- Query 1 routes to Sales and includes RAG context from docs
-- Query 4 (“refund…”) triggers **HUMAN APPROVAL REQUIRED** and pauses for:
-  - `approve` / `reject` / `modify`
-- Query 5 (“previous issue?”) answers using **SQLite memory**
-- After each query, the project saves **only**:
-  - the user query (`role="user"`)
-  - the supervisor final response (`role="assistant"`)
+### 🔍 What to Expect:
+1. **Intelligent Routing**: Query 1 routes to Sales and includes RAG context from the knowledge base docs.
+2. **Human Approval**: Query 4 (“refund…”) triggers **HUMAN APPROVAL REQUIRED** and pauses execution. You can choose to `approve`, `reject`, or `modify`.
+3. **Memory Retrieval**: Query 5 (“previous issue?”) accesses the **SQLite memory** to provide contextual follow-up.
+4. **Audit Trail**: After each query, only the user's prompt and the Supervisor's final response are saved to the SQLite database.
 
-## SQLite memory output (for submission screenshots)
+## 💾 SQLite Memory Inspection
 
-The DB file is created at:
-- `memory.db` in the project root
-
-You can inspect it with Python quickly:
+The database file `memory.db` is generated at runtime in the project root. To inspect the conversation memory, run:
 
 ```powershell
 python -c "import sqlite3; c=sqlite3.connect('memory.db'); print(c.execute('select id, customer_id, role, message, timestamp from conversations order by id asc').fetchall())"
 ```
 
-## Human approval behavior
+## ⚠️ Troubleshooting
 
-Sensitive requests are detected by **keywords only** (tight scope):
+- **“Missing GOOGLE_API_KEY”**: Ensure the `.env` file is in the project root and properly populated.
+- **“models/... not found” (404)**: The selected Gemini model isn't available for your API key. Update `GEMINI_CHAT_MODEL` or `GEMINI_EMBEDDING_MODEL` in `.env` to supported models.
 
-- refund
-- cancel / cancellation
-- close account / account closure
-- compensation
-- escalate / escalation
-
-When detected, the graph routes to `nodes/human_approval.py` and pauses for terminal input (`approve` / `reject` / `modify`).
-
-## Configuration
-
-All runtime settings are loaded from `.env` through `config.py`:
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `GOOGLE_API_KEY` | *(required)* | Gemini API key |
-| `GEMINI_CHAT_MODEL` | `models/gemini-2.0-flash` | Chat model for classifier, agents, supervisor |
-| `GEMINI_EMBEDDING_MODEL` | `models/gemini-embedding-001` | Embedding model for FAISS RAG |
-| `RAG_K` | `2` | Number of document chunks retrieved per query |
-
-## Troubleshooting
-
-### “Missing GOOGLE_API_KEY”
-- Ensure `.env` exists in the project root and contains `GOOGLE_API_KEY=...`
-- Re-run:
-
-```powershell
-python main.py
-```
-
-### “models/... not found” (NotFound / 404)
-The model ID in your `.env` is not available for your API key. Update `GEMINI_CHAT_MODEL` or `GEMINI_EMBEDDING_MODEL` to a model your key supports.
-
+---
+*Built with ❤️ using LangGraph and Gemini.*
